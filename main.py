@@ -7,10 +7,7 @@ rulesModule = None
 def importRules(configurationFilename):
 	global rulesModule
 	rulesModule = __import__("rules")
-	print(rulesModule)
 	rulesModule.importConfiguration(configurationFilename)
-	print("I'm here")
-	print(rulesModule.allRules)
 
 def nextWord(text, withSpace):
 	if not withSpace:
@@ -33,7 +30,6 @@ def checkWords(prevWord, spaces, nextWord):
 	for rule in rulesModule.allRules:
 		isApplied, space = rule.apply(prevWord, spaces, nextWord)
 		if isApplied:
-			print(rule.name, prevWord, "spaces", nextWord)
 			return space
 	# if no rule was applied, actually should not be called
 	return spaces
@@ -79,41 +75,7 @@ def formatFile(filename, outputFilename):
 			if not isPrevSpace:
 				result += checkWords(prevWord, "", word)
 			result += word
-		# spaces
-		# if isSpace:
-		# 	if "\n" in word:
-		# 		if len(lineCharStack) > 0:
-		# 			rules.indentLevel += 1
-		# 		lineCharStack = ""
-		# 		indentDecreased = False
-		# 	result += formatSpaces(word, nextWord(text[iter-1::-1], False)[::-1], nextWord(text[iter:], False))
-		# 	if nextChar in "." and "\n" in word:
-		# 		charStack += nextChar
-		# 		rules.indentLevel += 1
-		# elif isAlpha:
-		# 	if not isPrevSpace:
-		# 		result += formatSpaces("", nextWord(text[iter-1::-1], False)[::-1], nextWord(text[iter:], False))	
-		# 	result += word
-		# else:
-		# 	if "\n" not in prevWord:
-		# 		result += formatSpaces("", nextWord(text[iter-1::-1], False)[::-1], nextWord(text[iter:], False))
-		# 	result += word
-		# 	if word == "\"\"\"":
-		# 		rules.isMultilineComment = not rules.isMultilineComment
-		# 	# indents
-		# 	if word in "{([":
-		# 		charStack += word
-		# 		lineCharStack += word
-		# 	elif word in "})]":
-		# 		charStack = charStack[:-1]
-		# 		if len(lineCharStack) != 0:
-		# 			lineCharStack = lineCharStack[:-1]
-		# 		elif not indentDecreased:
-		# 			rules.indentLevel -= 1
-		# 			indentDecreased = True
-		# 		if len(charStack) > 0 and charStack[-1] == '.':
-		# 			charStack = charStack[:-1]
-		# 			rules.indentLevel -= 1
+		
 		iter += len(word)
 
 	output = open(outputFilename, mode="w")

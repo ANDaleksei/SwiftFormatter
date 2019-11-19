@@ -18,5 +18,4 @@ class FormattingRules:
 	# additional
 	indentLevel = 0
 	spaces = (indent * "\t") if useTab else (indent * " ")
-
 	isMultilineComment = False
