@@ -20,7 +20,7 @@ arguments:
   --filePath FILEPATH   Path to the file with swift code
   
   
-  --configurationFileName CONFIGURATIONFILENAME Name of the configuration file
+  --configurationFileName CONFIGURATIONFILENAME Name of the configuration file without .py extension. If file is named `example.py` you should pass `example` only. 
   
   
   --outputFileName OUTPUTFILENAME Name of the file where output will be saved
