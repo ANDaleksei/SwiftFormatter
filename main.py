@@ -26,6 +26,15 @@ def nextWord(text, withSpace):
 			return word
 	return word
 
+def nextLine(text):
+	line = ""
+	for char in text:
+		if char != '\n':
+			line += char
+		else:
+			return line
+	return line
+
 def checkWords(prevWord, spaces, nextWord):
 	for rule in rulesModule.allRules:
 		isApplied, space = rule.apply(prevWord, spaces, nextWord)
@@ -40,14 +49,8 @@ def formatFile(filename, outputFilename):
 	file.close()
 
 	allSpaces = " \n\t"
-	charStack = ""
-	spaces = ""
-	word = ""
 	result = ""
-	lineCharStack = ""
-	indentDecreased = False
 	# multiline
-	quteCount = 0
 	iter = 0
 	word = ""
 	while iter < len(text):
@@ -63,6 +66,12 @@ def formatFile(filename, outputFilename):
 
 		if isSpace:
 			result += checkWords(prevWord, word, nextWord(text[iter:], False))
+			if '\n' in word:
+				line = word.split('\n')[-1] + nextLine(text[iter + len(word):])
+				if len(line) > rulesModule.rules.maxCharachterInLine:
+					rulesModule.rules.lineIsLong = True
+				else:
+					rulesModule.rules.lineIsLong = False
 		elif isAlpha:
 			if not isPrevSpace:
 				result += checkWords(prevWord, "", word)

@@ -25,6 +25,8 @@ class AroundOperators(Rule):
 	name = "Rule name: around operators"
 
 	def apply(self, prevWord, space, nextWord):
+		if "\n" in space:
+			return False, None
 		if (len(nextWord) != 0 and nextWord in operators) or (len(prevWord) != 0 and prevWord in operators):
 			space = " " if rules.aroundOperators else ""
 			return True, space
@@ -87,7 +89,7 @@ class WrappingOpenBrace(Rule):
 	name = "Rule name: wrapping open brace"
 
 	def apply(self, prevWord, space, nextWord):
-		if nextWord == "{":
+		if nextWord == "{" and "\n" not in space:
 			space = "\n" + rules.indentLevel * rules.spaces if rules.wrappingOpenBrace else ""
 			return True, space
 		else:
@@ -97,7 +99,7 @@ class WrappingOpenParenthesses(Rule):
 	name = "Rule name: wrapping open parenthesses"
 
 	def apply(self, prevWord, space, nextWord):
-		if len(prevWord) != 0 and prevWord in "(":
+		if prevWord == "(" and "\n" not in space:
 			space = "\n" + rules.indentLevel * rules.spaces if rules.wrappingOpenParenthesses else ""
 			return True, space
 		else:
@@ -107,7 +109,7 @@ class WrappingParameter(Rule):
 	name = "Rule name: wrapping parameter"
 
 	def apply(self, prevWord, space, nextWord):
-		if len(prevWord) != 0 and prevWord in ",":
+		if len(prevWord) != 0 and prevWord in "," and "\n" not in space:
 			space = "\n" + rules.indentLevel * rules.spaces if rules.wrappingParameter else ""
 			return True, space
 		else:
@@ -117,8 +119,33 @@ class WrappingCloseParenthesses(Rule):
 	name = "Rule name: wrapping close parenthesses"
 
 	def apply(self, prevWord, space, nextWord):
-		if len(prevWord) != 0 and prevWord in "(":
-			space = "\n" + rules.indentLevel * rules.spaces if rules.wrappingCloseParenthesses else ""
+		wrapLine = rules.wrapLineIfLong and rules.lineIsLong
+		if nextWord == ")" and "\n" not in space and (rules.wrappingCloseParenthesses or wrapLine):
+			space = "\n" + rules.indentLevel * rules.spaces
+			return True, space
+		else:
+			return False, None
+
+class WrappingCloseBrace(Rule):
+	name = "Rule name: wrapping close brace"
+
+	def apply(self, prevWord, space, nextWord):
+		wrapLine = rules.wrapLineIfLong and rules.lineIsLong
+		if len(prevWord) != 0 and prevWord in "}" and "\n" not in space:
+			space = "\n" + rules.indentLevel * rules.spaces if (rules.wrappingCloseBrace or wrapLine) else ""
+			return True, space
+		else:
+			return False, None
+
+class WrapLineIfLong(Rule):
+	name = "Rule name: wrap line if long"
+
+	def apply(self, prevWord, space, nextWord):
+		comma = "," in prevWord and "\n" not in space
+		openParenthesses = ("(" in prevWord) and ("\n" not in space)
+		openBrace = prevWord == "{" and "\n" not in space
+		if len(prevWord) != 0 and (comma or openParenthesses or openBrace) and rules.lineIsLong:
+			space = "\n" + rules.indentLevel * rules.spaces if rules.wrapLineIfLong else " "
 			return True, space
 		else:
 			return False, None
@@ -140,7 +167,7 @@ class DefaultSpaceFormatter(Rule):
 					emptyLineIndent = rules.indentLevel * rules.spaces
 				else:
 					emptyLineIndent = ""
-				res = (count - 1) * ("\n" + emptyLineIndent)
+				res = min((count - 1), rules.maxNumberOfEmptyLines) * ("\n" + emptyLineIndent)
 			# last new line
 			if rules.isMultilineComment and not rules.indentMultilineString:
 				res += "\n"
@@ -160,19 +187,26 @@ def importConfiguration(configurationFilename):
 	module = __import__(configurationFilename)
 	global rules
 	rules = module.FormattingRules()
+	# additional
+	rules.indentLevel = 0
+	rules.spaces = (indent * "\t") if rules.useTab else (rules.indent * " ")
+	rules.isMultilineComment = False
+	rules.lineIsLong = False
 	global allRules
 	allRules = [
+		WrapLineIfLong(),
 		BeforeParenthesses(),
 		AroundOperators(),
 		BeforeLeftBrace(),
 		BeforeKeyword(),
-		Within(),
 		BeforeColons(),
 		AfterColons(),
 		WrappingOpenBrace(),
 		WrappingOpenParenthesses(),
 		WrappingParameter(),
 		WrappingCloseParenthesses(),
+		WrappingCloseBrace(),
+		Within(),
 		DefaultSpaceFormatter()
 	]
 
