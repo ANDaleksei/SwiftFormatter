@@ -35,6 +35,11 @@ def nextLine(text):
 			return line
 	return line
 
+def ifLineIsComment(text):
+	if len(text) < 2:
+		return False
+	return text[0] == "/" and text[1] == "/"
+
 def checkWords(prevWord, spaces, nextWord):
 	for rule in rulesModule.allRules:
 		isApplied, space = rule.apply(prevWord, spaces, nextWord)
@@ -50,7 +55,6 @@ def formatFile(filename, outputFilename):
 
 	allSpaces = " \n\t"
 	result = ""
-	# multiline
 	iter = 0
 	word = ""
 	while iter < len(text):
@@ -67,19 +71,25 @@ def formatFile(filename, outputFilename):
 		if isSpace:
 			result += checkWords(prevWord, word, nextWord(text[iter:], False))
 			if '\n' in word:
+				# check whether line is long
 				line = word.split('\n')[-1] + nextLine(text[iter + len(word):])
 				if len(line) > rulesModule.rules.maxCharachterInLine:
 					rulesModule.rules.lineIsLong = True
 				else:
 					rulesModule.rules.lineIsLong = False
+				# check whether line is comment
+				rulesModule.rules.isComment = ifLineIsComment(text[iter + len(word):])
+
 		elif isAlpha:
 			if not isPrevSpace:
 				result += checkWords(prevWord, "", word)
 			result += word
 		else:
 			if word in "{([":
+				rulesModule.rules.charStack.append(word)
 				rulesModule.rules.indentLevel += 1
 			elif word in "])}":
+				rulesModule.rules.charStack = rulesModule.rules.charStack[:-1]
 				rulesModule.rules.indentLevel -= 1
 			if not isPrevSpace:
 				result += checkWords(prevWord, "", word)
