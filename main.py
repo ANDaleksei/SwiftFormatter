@@ -20,7 +20,7 @@ def nextWord(text, withSpace):
 	isAlpha = (text[0].isalpha() or (text[0] in "#"))
 	isSpace = text[0] in " \t\n"
 	for char in text:
-		if ((char in " \t\n") == isSpace) and ((char.isalpha() or (char in "#")) == isAlpha) and (char not in "{([])}"):
+		if ((char in " \t\n") == isSpace) and ((char.isalpha() or (char in "#")) == isAlpha) and (char not in "{([])}") and not (char not in "\"" and len(word) > 0 and word[-1] in "\""):
 			word += char
 		else:
 			return word
@@ -77,10 +77,14 @@ def formatFile(filename, outputFilename):
 					rulesModule.rules.lineIsLong = True
 				else:
 					rulesModule.rules.lineIsLong = False
+				rulesModule.rules.hasLiteralOnLine = False
+				rulesModule.rules.isLine = False
 				# check whether line is comment
 				rulesModule.rules.isComment = ifLineIsComment(text[iter + len(word):])
 
 		elif isAlpha:
+			if word in ["switch", "enum", "func"]:
+				rulesModule.rules.lastKeyword = word
 			if not isPrevSpace:
 				result += checkWords(prevWord, "", word)
 			result += word
@@ -91,6 +95,9 @@ def formatFile(filename, outputFilename):
 			elif word in "])}":
 				rulesModule.rules.charStack = rulesModule.rules.charStack[:-1]
 				rulesModule.rules.indentLevel -= 1
+			elif "\"" in word and "\"\"" not in word and "\\\"" not in word:
+				rulesModule.rules.isLine = not rulesModule.rules.isLine
+				rulesModule.rules.hasLiteralOnLine = True
 			if not isPrevSpace:
 				result += checkWords(prevWord, "", word)
 			result += word

@@ -59,7 +59,7 @@ class Within(Rule):
 	def apply(self, prevWord, space, nextWord):
 		prevPredicate = (len(prevWord) != 0 and prevWord in "{([") and "\n" not in space
 		nextPredicate = (len(nextWord) != 0 and nextWord in "])}") and "\n" not in space
-		if prevPredicate or nextPredicate:
+		if prevPredicate or nextPredicate and (not prevPredicate or not nextPredicate):
 			space = " " if rules.within else ""
 			return True, space
 		else:
@@ -99,8 +99,8 @@ class WrappingOpenParenthesses(Rule):
 	name = "Rule name: wrapping open parenthesses"
 
 	def apply(self, prevWord, space, nextWord):
-		if prevWord == "(" and "\n" not in space:
-			space = "\n" + rules.indentLevel * rules.spaces if rules.wrappingOpenParenthesses else ""
+		if prevWord == "(" and "\n" not in space and rules.wrappingOpenParenthesses:
+			space = "\n" + rules.indentLevel * rules.spaces
 			return True, space
 		else:
 			return False, None
@@ -111,7 +111,7 @@ class WrappingParameter(Rule):
 	def apply(self, prevWord, space, nextWord):
 		isParenthessesLast = len(rules.charStack) != 0 and rules.charStack[-1] == "("
 		if prevWord == "," and "\n" not in space and isParenthessesLast:
-			space = "\n" + rules.indentLevel * rules.spaces if rules.wrappingParameter else ""
+			space = "\n" + rules.indentLevel * rules.spaces if rules.wrappingParameter and rules.lastKeyword == "func" else ""
 			return True, space
 		else:
 			return False, None
@@ -132,7 +132,7 @@ class WrappingCloseBrace(Rule):
 
 	def apply(self, prevWord, space, nextWord):
 		wrapLine = rules.wrapLineIfLong and rules.lineIsLong
-		if len(prevWord) != 0 and prevWord in "}" and "\n" not in space:
+		if len(prevWord) != 0 and prevWord in "}" and "\n" not in space and not rules.hasLiteralOnLine:
 			space = "\n" + rules.indentLevel * rules.spaces if (rules.wrappingCloseBrace or wrapLine) else ""
 			return True, space
 		else:
@@ -145,7 +145,7 @@ class WrapLineIfLong(Rule):
 		comma = "," in prevWord and "\n" not in space
 		openParenthesses = ("(" in prevWord) and ("\n" not in space)
 		openBrace = prevWord == "{" and "\n" not in space
-		if len(prevWord) != 0 and (comma or openParenthesses or openBrace) and rules.lineIsLong:
+		if len(prevWord) != 0 and (comma or openParenthesses or openBrace) and rules.lineIsLong and not rules.hasLiteralOnLine:
 			space = "\n" + rules.indentLevel * rules.spaces if rules.wrapLineIfLong else " "
 			return True, space
 		else:
@@ -173,10 +173,9 @@ class DefaultSpaceFormatter(Rule):
 			if rules.isMultilineComment and not rules.indentMultilineString:
 				res += "\n"
 			else:
-				#print("Level", rules.indentLevel)
 				res += "\n" + rules.indentLevel * rules.spaces
 			# check next chat
-			if nextWord in "})]":
+			if nextWord in "})]" or (nextWord == "case" and rules.lastKeyword == "switch"):
 				res = res[0:-(len(rules.spaces))]
 			elif nextWord in ".":
 				res += rules.spaces
@@ -186,7 +185,7 @@ class SkipFormatting(DefaultSpaceFormatter):
 	name = "Rule name: skip formatting if it comment"
 
 	def apply(self, prevWord, space, nextWord):
-		if rules.isComment:
+		if rules.isComment or rules.isLine:
 			return super().apply(prevWord, space, nextWord)
 		else:
 			return False, None
@@ -204,6 +203,9 @@ def importConfiguration(configurationFilename):
 	rules.isComment = False
 	rules.lineIsLong = False
 	rules.charStack = list()
+	rules.lastKeyword = ""
+	rules.isLine = False
+	rules.hasLiteralOnLine = False
 	global allRules
 	allRules = [
 		SkipFormatting(),
