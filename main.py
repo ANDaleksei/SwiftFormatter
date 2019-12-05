@@ -89,6 +89,9 @@ def formatFile(filename, outputFilename):
 				result += checkWords(prevWord, "", word)
 			result += word
 		else:
+			if not isPrevSpace:
+				result += checkWords(prevWord, "", word)
+			result += word
 			if word in "{([":
 				rulesModule.rules.charStack.append(word)
 				rulesModule.rules.indentLevel += 1
@@ -98,9 +101,6 @@ def formatFile(filename, outputFilename):
 			elif "\"" in word and "\"\"" not in word and "\\\"" not in word:
 				rulesModule.rules.isLine = not rulesModule.rules.isLine
 				rulesModule.rules.hasLiteralOnLine = True
-			if not isPrevSpace:
-				result += checkWords(prevWord, "", word)
-			result += word
 		
 		iter += len(word)
 

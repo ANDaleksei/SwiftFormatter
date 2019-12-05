@@ -9,10 +9,11 @@ class FormattingRules:
 	aroundOperators = True
 	beforeLeftBrace = True
 	beforeKeyword = True
-	within = True
+	within = False
 	beforeColons = False
 	afterColons = True
 	wrappingOpenBrace = False
+	wrappingAfterOpenBrace = True
 	wrappingOpenParenthesses = False
 	wrappingParameter = True
 	wrappingCloseBrace = True

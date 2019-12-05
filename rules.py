@@ -15,7 +15,7 @@ class BeforeParenthesses(Rule):
 	name = "Rule name: before parenthesses"
 
 	def apply(self, prevWord, space, nextWord):
-		if nextWord == "(" and "\n" not in space:
+		if nextWord == "(" and "\n" not in space and prevWord != "!":
 			space = " " if rules.beforeParenthesses else ""
 			return True, space
 		else:
@@ -37,7 +37,7 @@ class BeforeLeftBrace(Rule):
 	name = "Rule name: before left brace"
 
 	def apply(self, prevWord, space, nextWord):
-		if nextWord == "{" and "\n" not in space:
+		if nextWord == "{" and "\n" not in space and not rules.wrappingOpenBrace:
 			space = " " if rules.beforeLeftBrace else ""
 			return True, space
 		else:
@@ -95,6 +95,16 @@ class WrappingOpenBrace(Rule):
 		else:
 			return False, None
 
+class WrappingAfterOpenBrace(Rule):
+	name = "Rule name: wrapping after open brace"
+
+	def apply(self, prevWord, space, nextWord):
+		if prevWord == "{" and "\n" not in space:
+			space = "\n" + rules.indentLevel * rules.spaces if rules.wrappingAfterOpenBrace else ""
+			return True, space
+		else:
+			return False, None
+
 class WrappingOpenParenthesses(Rule):
 	name = "Rule name: wrapping open parenthesses"
 
@@ -132,8 +142,8 @@ class WrappingCloseBrace(Rule):
 
 	def apply(self, prevWord, space, nextWord):
 		wrapLine = rules.wrapLineIfLong and rules.lineIsLong
-		if len(prevWord) != 0 and prevWord in "}" and "\n" not in space and not rules.hasLiteralOnLine:
-			space = "\n" + rules.indentLevel * rules.spaces if (rules.wrappingCloseBrace or wrapLine) else ""
+		if nextWord == "}" and "\n" not in space and (rules.wrappingCloseBrace or wrapLine):
+			space = "\n" + max(0, rules.indentLevel - 1) * rules.spaces
 			return True, space
 		else:
 			return False, None
@@ -175,7 +185,7 @@ class DefaultSpaceFormatter(Rule):
 			else:
 				res += "\n" + rules.indentLevel * rules.spaces
 			# check next chat
-			if nextWord in "})]" or (nextWord == "case" and rules.lastKeyword == "switch"):
+			if nextWord in "})]" or ((nextWord == "case" or nextWord == "default") and rules.lastKeyword == "switch"):
 				res = res[0:-(len(rules.spaces))]
 			elif nextWord in ".":
 				res += rules.spaces
@@ -186,7 +196,10 @@ class SkipFormatting(DefaultSpaceFormatter):
 
 	def apply(self, prevWord, space, nextWord):
 		if rules.isComment or rules.isLine:
-			return super().apply(prevWord, space, nextWord)
+			if len(space) != 0 and "\n" in space:
+				return super().apply(prevWord, space, nextWord)
+			else:
+				return True, space
 		else:
 			return False, None
 
@@ -216,6 +229,7 @@ def importConfiguration(configurationFilename):
 		BeforeColons(),
 		AfterColons(),
 		WrappingOpenBrace(),
+		WrappingAfterOpenBrace(),
 		WrappingOpenParenthesses(),
 		WrappingParameter(),
 		WrappingCloseParenthesses(),
